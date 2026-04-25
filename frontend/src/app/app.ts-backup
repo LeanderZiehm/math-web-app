@@ -1,0 +1,119 @@
+import { Component, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+
+@Component({
+  selector: 'app-root',
+  imports: [RouterOutlet],
+  templateUrl: './app.html',
+  styleUrl: './app.css'
+})
+export class App {
+  protected readonly title = signal('frontend');
+
+
+  current = {};
+  streak = 0;
+  total = 0;
+  history = JSON.parse(localStorage.getItem("mathHistory") || "[]");
+
+  function rand(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function save() {
+    localStorage.setItem("mathHistory", JSON.stringify(history));
+    localStorage.setItem("streak", streak);
+    localStorage.setItem("total", total);
+  }
+
+  function load() {
+    streak = parseInt(localStorage.getItem("streak") || "0");
+    total = parseInt(localStorage.getItem("total") || "0");
+  }
+
+  function generate() {
+    const ops = ["+", "-", "*", "/"];
+    const op = ops[rand(0, 3)];
+
+    let a, b, question, answer;
+
+    if (op === "+") {
+      a = rand(0, 10000);
+      b = rand(0, 10000);
+      answer = a + b;
+      question = `${a} + ${b}`;
+    }
+
+    if (op === "-") {
+      a = rand(0, 10000);
+      b = rand(0, a);
+      answer = a - b;
+      question = `${a} - ${b}`;
+    }
+
+    if (op === "*") {
+      a = rand(1, 100);
+      b = rand(1, 100);
+      answer = a * b;
+      question = `${a} × ${b}`;
+    }
+
+    if (op === "/") {
+      b = rand(1, 100);
+      answer = rand(1, 100);
+      a = b * answer;
+      question = `${a} ÷ ${b}`;
+    }
+
+    current = { question, answer };
+    document.getElementById("question").textContent = question;
+    document.getElementById("answer").value = "";
+    document.getElementById("result").textContent = "";
+  }
+
+  function updateStats() {
+    document.getElementById("stats").innerHTML =
+      `Streak: ${streak}<br>Total: ${total}`;
+  }
+
+  function checkAnswer() {
+    const user = parseFloat(document.getElementById("answer").value);
+    const correct = user === current.answer;
+
+    total++;
+
+    let record = {
+      question: current.question,
+      correctAnswer: current.answer,
+      userAnswer: user,
+      correct,
+      time: new Date().toISOString()
+    };
+
+    history.push(record);
+
+    if (correct) {
+      streak++;
+      document.getElementById("result").textContent = "Correct!";
+      document.getElementById("result").className = "result correct";
+    } else {
+      streak = 0;
+      document.getElementById("result").textContent =
+        `Wrong! Correct: ${current.answer}`;
+      document.getElementById("result").className = "result wrong";
+    }
+
+    save();
+    updateStats();
+  }
+
+  function nextQuestion() {
+    generate();
+  }
+
+  load();
+  updateStats();
+  generate();
+
+
+}
